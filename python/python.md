@@ -96,6 +96,25 @@
       1
       ```
 
+* zip函数接受任意多个（包括0个和1个）序列作为参数，合并后返回一个tuple列表
+
+  ```python
+  a=[1,2,3]
+  b=[4,5,6]
+  ab=zip(a,b)
+  print(list(ab))
+  """
+  [(1, 4), (2, 5), (3, 6)]
+  """
+  for i,j in zip(a,b):
+       print(i/2,j*2)
+  """
+  0.5 8
+  1.0 10
+  1.5 12
+  """
+  ```
+  
 * Python数据类型转换
 
   | 函数                  | 描述                                                |
@@ -145,6 +164,7 @@
 
 
 * Python 中用 elif 代替了 else if，所以if语句的关键字为：if – elif – else；每个条件后面要使用冒号 :，表示接下来是满足条件后要执行的语句块；在Python中没有switch – case语句
+
 * 在 while … else 在条件语句为 false 时执行 else 的语句块
 
 * for循环可以遍历任何序列的项目，如一个列表或者一个字符串；如果你需要遍历数字序列，可以使用内置range()函数，它会生成数列；
@@ -230,7 +250,19 @@
 
 * 函数不定长参数：加了星号 * 的参数会以元组(tuple)的形式导入，存放所有未命名的变量参数（默认）；加了两个星号 ** 的参数会以字典的形式导入。
 
-* python 使用 lambda 来创建匿名函数：lambda [arg1 [,arg2,.....argn]]:expression
+* python 使用 lambda 来创建匿名函数：lambda [arg1 [,arg2,.....argn]]:expression；map是把函数和参数绑定在一起，会根据提供的函数对指定序列做映射：map(function, iterable, ...)
+
+  ```python
+  fun= lambda x,y:x+y
+  list(map(fun,[1],[2]))
+  """
+  [3]
+  """
+  list(map(fun,[1,2],[3,4]))
+  """
+  [4,6]
+  """
+  ```
 
 * Python3.8 新增了一个函数形参语法 / 用来指明/以前的函数形参必须使用指定位置参数，不能使用关键字参数的形式。
 
@@ -259,6 +291,8 @@
 
   导入语句遵循如下规则：如果包定义文件 \_\_init\_\_.py 存在一个叫做 \_\_all\_\_ 的列表变量，那么在使用 from package import * 的时候就把这个列表中的所有名字作为包内容导入。在:file:sounds/effects/\_\_init\_\_.py中包含如下代码:\_\_all\_\_ = ["echo", "surround", "reverse"]表示当你使用from sound.effects import *这种用法时，你只会导入包里面这三个子模块。
 
+* copy模块中的copy.copy()  是浅拷贝，而copy.deepcopy()是深拷贝
+
 * 类有一个名为 \_\_init\_\_() 的特殊方法（构造方法），该方法在类实例化时会自动调用；类的方法与普通的函数只有一个特别的区别——它们必须有一个额外的第一个参数名称, 按照惯例它的名称是 self，self 代表的是类的实例，代表当前对象的地址，而 self.class 则指向类。
 
 * Python同样有限的支持多继承形式，若是父类中有相同的方法名，而在子类使用时未指定，python从左至右搜索 即方法在子类中未找到时，从左到右查找父类中是否包含方法。
@@ -271,7 +305,176 @@
 
 * 函数内的函数可以引用外部变量，但是不可以对其进行修改，当内部作用域想修改外部作用域的变量时，就要用到global和nonlocal关键字，如果要修改嵌套作用域（enclosing 作用域，外层非全局作用域）中的变量则需要 nonlocal 关键字；组合数据（如列表）除外；
 
+* Python 偏函数：偏函数是将所要承载的函数作为partial()函数的第一个参数，原函数的各个参数依次作为partial()函数后续的参数，除非使用关键字参数。
+
+  ```python
+  from functools import partial
+   
+  def mod( n, m ):
+    return n % m
+   
+  mod_by_100 = partial( mod, 100 )
+   
+  print mod( 100, 7 )  # 2
+  print mod_by_100( 7 )  # 2
+  ```
+
+* Python 函数装饰器
+
+  ```python
+  def a_new_decorator(a_func):
+      def wrapTheFunction():
+          print("I am doing some boring work before executing a_func()")
+          a_func()
+          print("I am doing some boring work after executing a_func()")
+      return wrapTheFunction
+   
+  def a_function_requiring_decoration():
+      print("I am the function which needs some decoration to remove my foul smell")
+   
+  a_function_requiring_decoration()
+  a_function_requiring_decoration = a_new_decorator(a_function_requiring_decoration)
+  a_function_requiring_decoration()
+  
+  #上面的等价于
+  
+  @a_new_decorator
+  def a_function_requiring_decoration():
+      """Hey you! Decorate me!"""
+      print("I am the function which needs some decoration to "
+            "remove my foul smell")
+      
+  a_function_requiring_decoration()
+  
+  print(a_function_requiring_decoration.__name__)
+  # Output: wrapTheFunction，所以要修改为
+  from functools import wraps
+  def a_new_decorator(a_func):
+      @wraps(a_func)
+      def wrapTheFunction():
+          print("I am doing some boring work before executing a_func()")
+          a_func()
+          print("I am doing some boring work after executing a_func()")
+      return wrapTheFunction
+  ```
+
+  带参数的装饰器
+
+  ```python
+  from functools import wraps
+   
+  def logit(logfile='out.log'):
+      def logging_decorator(func):
+          @wraps(func)
+          def wrapped_function(*args, **kwargs):
+              log_string = func.__name__ + " was called"
+              print(log_string)
+              # 打开logfile，并写入内容
+              with open(logfile, 'a') as opened_file:
+                  # 现在将日志打到指定的logfile
+                  opened_file.write(log_string + '\n')
+              return func(*args, **kwargs)
+          return wrapped_function
+      return logging_decorator
+   
+  @logit()
+  def myfunc1():
+      pass
+   
+  myfunc1()
+  # Output: myfunc1 was called
+  # 现在一个叫做 out.log 的文件出现了，里面的内容就是上面的字符串
+   
+  @logit(logfile='func2.log')
+  def myfunc2():
+      pass
+   
+  myfunc2()
+  # Output: myfunc2 was called
+  # 现在一个叫做 func2.log 的文件出现了，里面的内容就是上面的字符串
+  ```
+
+  装饰器类
+
+  ```python
+  from functools import wraps
+   
+  class logit(object):
+      def __init__(self, logfile='out.log'):
+          self.logfile = logfile
+   
+      def __call__(self, func):
+          @wraps(func)
+          def wrapped_function(*args, **kwargs):
+              log_string = func.__name__ + " was called"
+              print(log_string)
+              # 打开logfile并写入
+              with open(self.logfile, 'a') as opened_file:
+                  # 现在将日志打到指定的文件
+                  opened_file.write(log_string + '\n')
+              # 现在，发送一个通知
+              self.notify()
+              return func(*args, **kwargs)
+          return wrapped_function
+   
+      def notify(self):
+          # logit只打日志，不做别的
+          pass
+      
+  class email_logit(logit):
+      '''
+      一个logit的实现版本，可以在函数调用时发送email给管理员
+      '''
+      def __init__(self, email='admin@myproject.com', *args, **kwargs):
+          self.email = email
+          super(email_logit, self).__init__(*args, **kwargs)
+   
+      def notify(self):
+          # 发送一封email到self.email
+          # 这里就不做实现了
+          pass
+      
+  @logit()
+  def myfunc1():
+      pass
+  ```
+
+* Python多线程：Python 的设计上, 有一个必要的环节, 就是 Global Interpreter Lock (GIL). 这个东西让 Python 还是一次性只能处理一个东西，尽管Python完全支持多线程编程， 但是解释器的C语言实现部分在完全并行执行时并不是线程安全的。 实际上，解释器被一个全局解释器锁保护着，它确保任何时候都只有一个Python线程执行。 GIL最大的问题就是Python的多线程程序并不能利用多核CPU的优势 （比如一个使用了多个线程的计算密集型程序只会在一个单CPU上面运行）。
+
+  Python通过两个标准库thread和threading提供对线程的支持。thread提供了低级别的、原始的线程以及一个简单的锁；threading 模块提供的其他方法，一般使用threading。
+
+  Python的Queue模块中提供了同步的、线程安全的队列类，包括FIFO（先入先出)队列Queue，LIFO（后入先出）队列LifoQueue，和优先级队列PriorityQueue。这些队列都实现了锁原语，能够在多线程中直接使用。可以使用队列来实现线程间的同步。
+
+* Python多进程：用来弥补 threading 的一些劣势, 比如在 threading 中提到的GIL，import multiprocessing
+
+  进程池 Pool：有了池子之后，就可以让池子对应某一个函数，我们向池子里丢数据，池子就会返回函数返回的值（用map()获取结果）；Pool除了map()外，还有可以返回结果的方式，那就是apply_async()，apply_async()中只能传递一个值，它只会放入一个核进行运算，但是传入值时要注意是可迭代的，所以在传入值后需要加逗号, 同时需要用get()方法获取返回值
+
+  ```python
+  def multicore():
+      pool = mp.Pool() 
+      res = pool.map(job, range(10))
+      print(res)
+      res = pool.apply_async(job, (2,))
+      # 用get获得结果
+      print(res.get())
+      # 迭代器，i=0时apply一次，i=1时apply一次等等
+      multi_res = [pool.apply_async(job, (i,)) for i in range(10)]
+      # 从迭代器中取出
+      print([res.get() for res in multi_res])
+      
+  if __name__ == '__main__':
+      multicore()
+  
+  运行结果：
+  [0, 1, 4, 9, 16, 25, 36, 49, 64, 81] # map()
+  4 
+  [0, 1, 4, 9, 16, 25, 36, 49, 64, 81] # multi_res
+  ```
+
+  共享内存：可以通过使用Value数据存储在一个共享的内存表中；还有一个Array类，可以和共享内存交互，来实现在进程之间共享数据。
+
 * Python3 标准库概览
+
   * 操作系统接口：os模块
   * 文件通配符：glob模块
   * 字符串正则匹配：re模块
